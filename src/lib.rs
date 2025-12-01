@@ -271,6 +271,8 @@ impl Discoverer {
         me.addrs.extend(addrs.into_iter().map(|addr| (addr, port)));
         me.addrs.sort_unstable();
         me.addrs.dedup();
+        let thing = &me.addrs;
+        tracing::debug!("Registered {thing:?}");
         self
     }
 
