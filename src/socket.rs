@@ -156,22 +156,12 @@ pub fn socket_v4(interface_addr: Option<Ipv4Addr>) -> Result<UdpSocket, SocketEr
     // this socket will receive multicast packets from ALL interfaces,
     // not just the default one. This simplifies multi-interface support
     // for receiving, though sending still requires per-interface sockets.
-    if let Some(addr) = interface_addr {
-        socket
-            .join_multicast_v4(&MDNS_IPV4, &addr)
-            .map_err(|source| SocketError::JoinMulticast {
-                domain: IP::Ipv4,
-                source,
-            })?;
-    } else {
-        #[cfg(not(any(target_os = "macos", target_os = "freebsd", target_os = "openbsd")))]
-        socket
-            .join_multicast_v4(&MDNS_IPV4, &Ipv4Addr::UNSPECIFIED)
-            .map_err(|source| SocketError::JoinMulticast {
-                domain: IP::Ipv4,
-                source,
-            })?;
-    }
+    socket
+        .join_multicast_v4(&MDNS_IPV4, &interface_addr.unwrap_or(Ipv4Addr::UNSPECIFIED))
+        .map_err(|source| SocketError::JoinMulticast {
+            domain: IP::Ipv4,
+            source,
+        })?;
 
     socket
         .set_multicast_ttl_v4(16)
