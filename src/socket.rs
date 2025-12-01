@@ -57,6 +57,12 @@ pub enum SocketError {
         #[source]
         source: std::io::Error,
     },
+    #[error("{domain}: error setting multicast interface")]
+    SetMulticastInterface {
+        domain: IP,
+        #[source]
+        source: std::io::Error,
+    },
     #[error("{domain}: error setting multicast loop")]
     SetMulticastLoop {
         domain: IP,
@@ -94,7 +100,12 @@ pub enum SocketError {
 pub fn socket_v4(interface_addr: Option<Ipv4Addr>) -> Result<UdpSocket, SocketError> {
     // Make sure we bind to a specific interface if specified
     let bind_addr = match interface_addr {
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "openbsd"))]
+        Some(_) => SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, MDNS_PORT).into(),
+
+        #[cfg(not(any(target_os = "macos", target_os = "freebsd", target_os = "openbsd")))]
         Some(addr) => SocketAddrV4::new(addr, MDNS_PORT).into(),
+
         None => SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, MDNS_PORT).into(),
     };
 
@@ -123,6 +134,16 @@ pub fn socket_v4(interface_addr: Option<Ipv4Addr>) -> Result<UdpSocket, SocketEr
             domain: IP::Ipv4,
             source,
         })?;
+
+
+    if let Some(addr) = interface_addr {
+        socket.set_multicast_if_v4(&addr).map_err(|source| SocketError::SetMulticastInterface { 
+            domain: IP::Ipv4,
+            source,
+        })?;
+    }
+
+
     socket
         .set_multicast_loop_v4(true)
         .map_err(|source| SocketError::SetMulticastLoop {
@@ -429,3 +450,4 @@ pub enum Mode {
     V6,
     Any,
 }
+
