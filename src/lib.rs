@@ -245,6 +245,7 @@ impl Discoverer {
     ///
     /// This sets τ=0.7sec and φ=2.5, see [Discoverer::new] for the `name` and `peer_id` arguments.
     pub fn new_interactive(name: String, peer_id: String) -> Self {
+        tracing::debug!("Initializing {name:?}");
         Self::new(name, peer_id)
             .with_cadence(Duration::from_millis(700))
             .with_response_rate(2.5)
